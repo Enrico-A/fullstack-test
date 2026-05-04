@@ -7,5 +7,8 @@ mongosh -- "$MONGO_DATABASE_NAME" <<-EOJS
 	admin.auth(rootUser, rootPassword);
 	var user = '$MONGO_DATABASE_USERNAME';
 	var passwd = '$MONGO_DATABASE_PASSWORD';
-	db.createUser({user: user, pwd: passwd, roles: ["dbOwner"]});
+	var appDb = db.getSiblingDB('$MONGO_DATABASE_NAME');
+	if (!appDb.getUser(user)) {
+		appDb.createUser({ user: user, pwd: passwd, roles: ["dbOwner"] });
+	}
 EOJS

@@ -31,7 +31,7 @@ export const AppProvider = props => {
   const menuItems = {
     [MacroMenu.Home]: [
       {
-        label: <Link to="/">{t('common.home')}</Link>,
+        label: <Link to="/">{t('common.diary')}</Link>,
         key: 'home',
         icon: <FontAwesomeIcon icon={faHome} />,
         authorizedRoles: ['admin', 'designer', 'manufacturer', 'owner']

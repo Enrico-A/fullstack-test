@@ -6,7 +6,8 @@ const config = require('./config');
 const { MONGO_DATABASE_USERNAME, MONGO_DATABASE_PASSWORD, MONGO_DATABASE_HOST, MONGO_DATABASE_NAME } = process.env;
 
 const remoteDb = `${MONGO_DATABASE_HOST}/${MONGO_DATABASE_NAME}?authSource=%24external&authMechanism=MONGODB-AWS&retryWrites=true&w=majority`;
-const localDb = `mongodb://${MONGO_DATABASE_USERNAME}:${MONGO_DATABASE_PASSWORD}@${MONGO_DATABASE_HOST}:27017/${MONGO_DATABASE_NAME}`;
+// Authenticate against the application database when using the local Docker Mongo instance.
+const localDb = `mongodb://${encodeURIComponent(MONGO_DATABASE_USERNAME)}:${encodeURIComponent(MONGO_DATABASE_PASSWORD)}@${MONGO_DATABASE_HOST}:27017/${MONGO_DATABASE_NAME}?authSource=${encodeURIComponent(MONGO_DATABASE_NAME)}`;
 
 const mongoURL = process.env.ENV !== 'dev' ? remoteDb : localDb;
 

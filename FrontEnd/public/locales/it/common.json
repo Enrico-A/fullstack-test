@@ -44,7 +44,19 @@
     "filter": "Filtra",
     "home": "Home",
     "new": "Nuovo",
-    "ok": "Ok"
+    "ok": "Ok",
+    "diary": "Diario",
+    "diarySubtitle": "Traccia entrate e uscite con un flusso CRUD essenziale.",
+    "amount": "Importo",
+    "date": "Data",
+    "notes": "Note",
+    "actions": "Azioni",
+    "allTypes": "Tutti i tipi",
+    "allCategories": "Tutte le categorie",
+    "searchDescription": "Cerca per descrizione",
+    "addEntry": "Aggiungi voce",
+    "editEntry": "Modifica voce",
+    "amountMustBePositive": "L'importo deve essere maggiore di zero"
   },
   "login": {
     "btn": "Accedi",

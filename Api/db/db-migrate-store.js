@@ -9,15 +9,14 @@ if (process.env.ENV === 'dev' && fs.existsSync(path.resolve(__dirname, '.env.dev
   dotenv.config();
 }
 
-if (process.env.ENV === 'dev') process.env.MONGO_DATABASE_HOST = 'localhost';
-
 const Migration = require('../models/migration');
-require('./connect');
+const connection = require('./connect');
 
 class dbStore {
   load(fn) {
-    return Migration.findOne({})
-      .lean()
+    return connection
+      .asPromise()
+      .then(() => Migration.findOne({}).lean())
       .then(data => {
         if (!data) return fn(null, {});
         if (
@@ -32,21 +31,25 @@ class dbStore {
   }
 
   save(set, fn) {
-    return Migration.updateOne(
-      {},
-      {
-        $set: {
-          lastRun: set.lastRun
-        },
-        $push: {
-          migrations: { $each: set.migrations }
-        }
-      },
-      {
-        upsert: true,
-        multi: true
-      }
-    )
+    return connection
+      .asPromise()
+      .then(() =>
+        Migration.updateOne(
+          {},
+          {
+            $set: {
+              lastRun: set.lastRun
+            },
+            $push: {
+              migrations: { $each: set.migrations }
+            }
+          },
+          {
+            upsert: true,
+            multi: true
+          }
+        )
+      )
       .then(result => fn(null, result))
       .catch(fn);
   }

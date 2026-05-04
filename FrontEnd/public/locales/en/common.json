@@ -44,7 +44,19 @@
     "filter": "Filter",
     "home": "Home",
     "new": "Nuovo",
-    "ok": "Ok"
+    "ok": "Ok",
+    "diary": "Diary",
+    "diarySubtitle": "Track income and expenses with a minimal CRUD workflow.",
+    "amount": "Amount",
+    "date": "Date",
+    "notes": "Notes",
+    "actions": "Actions",
+    "allTypes": "All types",
+    "allCategories": "All categories",
+    "searchDescription": "Search by description",
+    "addEntry": "Add entry",
+    "editEntry": "Edit entry",
+    "amountMustBePositive": "Amount must be greater than zero"
   },
   "login": {
     "btn": "Sign In",
