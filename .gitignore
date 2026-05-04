@@ -78,3 +78,8 @@ $RECYCLE.BIN/
 
 # Custom dir
 dbdata
+
+# Custom files
+.vscode/
+.playwright-mcp/
+*.png
