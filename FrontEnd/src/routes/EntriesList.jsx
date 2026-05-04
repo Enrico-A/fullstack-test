@@ -12,6 +12,7 @@ import Filters, { useFilters } from '../components/core/table/Filters';
 import MessageContext from '../helpers/core/MessageContext';
 import { handleTableChange } from '../helpers/core/utils';
 import useCustomNavigate from '../hooks/core/useCustomNavigate';
+import DiaryListState from '../components/diary/DiaryListState';
 import EntrySummaryCards from '../components/diary/EntrySummaryCards';
 import { ENTRY_CATEGORY_OPTIONS, ENTRY_TYPE_OPTIONS } from '../constants/entryOptions';
 import { buildEntriesRequestParams, buildFilterFormValues, calculateEntriesSummary } from '../helpers/diary/entries';
@@ -25,6 +26,7 @@ const EntriesList = () => {
   const [summary, setSummary] = useState({ income: 0, expense: 0, balance: 0 });
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [sorter, setSorter] = useState('-date');
 
   const [filtersForm] = Form.useForm();
@@ -41,6 +43,10 @@ const EntriesList = () => {
       setEntries(response.data);
       setSummary(calculateEntriesSummary(response.data));
       setTotalCount(Number(response.headers['x-total-count'] ?? response.data.length));
+      setLoadError(false);
+    } catch (error) {
+      // Keep the current filters visible and render an inline retry state.
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -164,12 +170,21 @@ const EntriesList = () => {
     </Form>
   );
 
+  const emptyState = (
+    <DiaryListState
+      type="empty"
+      hasFilters={filtersManager.hasFilters}
+      onCreateEntry={() => navigate('/entries/new')}
+      onClearFilters={() => filtersManager.onClearFilters(filtersForm)}
+    />
+  );
+
   return (
     <ContentPanel
       title={t('common.diary')}
       subtitle={t('common.diarySubtitle')}
       titleAction={
-        <Space>
+        <Space wrap>
           <Button onClick={filtersManager.toggleFilter}>{t('common.filter')}</Button>
           <Button type="primary" onClick={event => navigate('/entries/new', event)}>
             {t('common.addEntry')}
@@ -178,7 +193,7 @@ const EntriesList = () => {
       }
     >
       <div className="mb-4">
-        <EntrySummaryCards summary={summary} />
+        <EntrySummaryCards summary={summary} loading={loading} />
       </div>
 
       <div className={filtersManager.filterContainerClasses}>
@@ -190,18 +205,24 @@ const EntriesList = () => {
           showReset={filtersManager.hasFilters}
           filters={filtersLayout}
         />
-        <Table
-          rowKey="_id"
-          loading={loading}
-          dataSource={entries}
-          columns={columns}
-          totalCount={totalCount}
-          countLabel="common.visibleEntriesCount"
-          deleteSaveButtonOnRow
-          onDelete={handleDelete}
-          sortableKeys={['date', 'type', 'amount', 'category', 'description']}
-          onChange={handleTableChange(setSorter)}
-        />
+        {loadError ? (
+          <DiaryListState type="error" onRetry={loadEntries} onCreateEntry={() => navigate('/entries/new')} />
+        ) : (
+          <Table
+            rowKey="_id"
+            loading={loading}
+            dataSource={entries}
+            columns={columns}
+            totalCount={totalCount}
+            countLabel="common.visibleEntriesCount"
+            deleteSaveButtonOnRow
+            onDelete={handleDelete}
+            sortableKeys={['date', 'type', 'amount', 'category', 'description']}
+            onChange={handleTableChange(setSorter)}
+            scroll={{ x: 960 }}
+            locale={{ emptyText: emptyState }}
+          />
+        )}
       </div>
     </ContentPanel>
   );
