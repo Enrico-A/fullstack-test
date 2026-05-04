@@ -11,9 +11,11 @@ import Table from '../components/core/table/Table';
 import Filters, { useFilters } from '../components/core/table/Filters';
 import MessageContext from '../helpers/core/MessageContext';
 import { handleTableChange } from '../helpers/core/utils';
+import EntrySummaryCards from '../components/diary/EntrySummaryCards';
 import { ENTRY_CATEGORY_OPTIONS, ENTRY_TYPE_OPTIONS } from '../constants/entryOptions';
 
 const buildRequestParams = ({ savedFilters, sorter }) => {
+  // Keep the API request aligned with the persisted UI filters.
   const params = {
     count: true,
     sorter
@@ -22,15 +24,42 @@ const buildRequestParams = ({ savedFilters, sorter }) => {
   if (savedFilters?.type) params.type = savedFilters.type;
   if (savedFilters?.category) params.category = savedFilters.category;
   if (savedFilters?.description) params.description = savedFilters.description.trim();
+  if (savedFilters?.dateFrom) params.dateFrom = savedFilters.dateFrom;
+  if (savedFilters?.dateTo) params.dateTo = savedFilters.dateTo;
 
   return params;
 };
+
+const calculateSummary = entries =>
+  entries.reduce(
+    (acc, entry) => {
+      // Aggregate visible entries only, so the summary reflects active filters.
+      if (entry.type === 'income') {
+        acc.income += entry.amount;
+      } else {
+        acc.expense += entry.amount;
+      }
+
+      acc.balance = acc.income - acc.expense;
+
+      return acc;
+    },
+    { income: 0, expense: 0, balance: 0 }
+  );
+
+const buildFilterFormValues = savedFilters => ({
+  // Convert persisted date strings back to dayjs objects for the Ant Design form.
+  ...savedFilters,
+  dateFrom: savedFilters?.dateFrom ? dayjs(savedFilters.dateFrom) : undefined,
+  dateTo: savedFilters?.dateTo ? dayjs(savedFilters.dateTo) : undefined
+});
 
 const Home = () => {
   const { t } = useTranslation();
   const { loadingMsg, savedMsg, errorMsg } = useContext(MessageContext);
 
   const [entries, setEntries] = useState([]);
+  const [summary, setSummary] = useState({ income: 0, expense: 0, balance: 0 });
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -46,10 +75,12 @@ const Home = () => {
     setLoading(true);
 
     try {
+      // Reload the list every time sorting or filters change.
       const params = buildRequestParams({ savedFilters: filtersManager.savedFilters, sorter });
       const response = await Api.get('/entries', { params });
 
       setEntries(response.data);
+      setSummary(calculateSummary(response.data));
       setTotalCount(Number(response.headers['x-total-count'] ?? response.data.length));
     } finally {
       setLoading(false);
@@ -57,7 +88,7 @@ const Home = () => {
   };
 
   useEffect(() => {
-    filtersForm.setFieldsValue(filtersManager.savedFilters);
+    filtersForm.setFieldsValue(buildFilterFormValues(filtersManager.savedFilters));
   }, [filtersManager.savedFilters]);
 
   useEffect(() => {
@@ -65,12 +96,14 @@ const Home = () => {
   }, [sorter, filtersManager.savedFilters]);
 
   const closeModal = () => {
+    // Reset the form state to avoid leaking values between create and edit flows.
     setIsModalOpen(false);
     setEditingEntry(null);
     entryForm.resetFields();
   };
 
   const openCreateModal = () => {
+    // Start the create flow with sensible defaults for the MVP diary.
     setEditingEntry(null);
     entryForm.setFieldsValue({
       type: 'expense',
@@ -84,6 +117,7 @@ const Home = () => {
   };
 
   const openEditModal = entry => {
+    // Rehydrate the stored ISO date into a dayjs instance for the date picker.
     setEditingEntry(entry);
     entryForm.setFieldsValue({
       ...entry,
@@ -98,6 +132,7 @@ const Home = () => {
 
     const payload = {
       ...values,
+      // Send the same date format expected by the backend validation schema.
       date: values.date.format('YYYY-MM-DD')
     };
 
@@ -205,6 +240,22 @@ const Home = () => {
           onChange={event => filtersManager.saveFilters('description', event.target.value)}
         />
       </Form.Item>
+      <Form.Item label={t('common.fromDate')} name="dateFrom">
+        <DatePicker
+          className="w-full"
+          format="YYYY-MM-DD"
+          // Persist the filter value as a plain string to keep local storage serializable.
+          onChange={value => filtersManager.saveFilters('dateFrom', value ? value.format('YYYY-MM-DD') : undefined)}
+        />
+      </Form.Item>
+      <Form.Item label={t('common.toDate')} name="dateTo">
+        <DatePicker
+          className="w-full"
+          format="YYYY-MM-DD"
+          // Persist the filter value as a plain string to keep local storage serializable.
+          onChange={value => filtersManager.saveFilters('dateTo', value ? value.format('YYYY-MM-DD') : undefined)}
+        />
+      </Form.Item>
     </Form>
   );
 
@@ -221,6 +272,10 @@ const Home = () => {
         </Space>
       }
     >
+      <div className="mb-4">
+        <EntrySummaryCards summary={summary} />
+      </div>
+
       <div className={filtersManager.filterContainerClasses}>
         <Filters
           title={t('common.filter')}
@@ -236,6 +291,7 @@ const Home = () => {
           dataSource={entries}
           columns={columns}
           totalCount={totalCount}
+          countLabel="common.visibleEntriesCount"
           deleteSaveButtonOnRow
           onDelete={handleDelete}
           sortableKeys={['date', 'type', 'amount', 'category', 'description']}

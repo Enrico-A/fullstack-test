@@ -54,9 +54,19 @@
     "allTypes": "All types",
     "allCategories": "All categories",
     "searchDescription": "Search by description",
+    "searchText": "Text",
+    "searchTextPlaceholder": "Search by text",
     "addEntry": "Add entry",
     "editEntry": "Edit entry",
-    "amountMustBePositive": "Amount must be greater than zero"
+    "addEntrySubtitle": "Create a new diary entry and save it through the CRUD API.",
+    "editEntrySubtitle": "Update an existing diary entry and persist the changes through the CRUD API.",
+    "amountMustBePositive": "Amount must be greater than zero",
+    "totalIncome": "Total income",
+    "totalExpense": "Total expense",
+    "balance": "Balance",
+    "fromDate": "From date",
+    "toDate": "To date",
+    "visibleEntriesCount": "Visible entries: {{count}}"
   },
   "login": {
     "btn": "Sign In",

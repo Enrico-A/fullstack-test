@@ -54,9 +54,19 @@
     "allTypes": "Tutti i tipi",
     "allCategories": "Tutte le categorie",
     "searchDescription": "Cerca per descrizione",
+    "searchText": "Testo",
+    "searchTextPlaceholder": "Cerca per testo",
     "addEntry": "Aggiungi voce",
     "editEntry": "Modifica voce",
-    "amountMustBePositive": "L'importo deve essere maggiore di zero"
+    "addEntrySubtitle": "Crea una nuova voce del diario e salvala tramite le API CRUD.",
+    "editEntrySubtitle": "Aggiorna una voce esistente del diario e persisti le modifiche tramite le API CRUD.",
+    "amountMustBePositive": "L'importo deve essere maggiore di zero",
+    "totalIncome": "Totale entrate",
+    "totalExpense": "Totale uscite",
+    "balance": "Saldo",
+    "fromDate": "Data da",
+    "toDate": "Data a",
+    "visibleEntriesCount": "Voci visibili: {{count}}"
   },
   "login": {
     "btn": "Accedi",

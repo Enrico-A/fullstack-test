@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom';
+import { createBrowserRouter, Navigate, Outlet, RouterProvider } from 'react-router-dom';
 import { Layout } from 'antd';
 
 import AuthContext, { AuthStatus } from '../helpers/core/AuthContext';
@@ -11,7 +11,8 @@ import Sidebar from '../components/core/layout/Sidebar';
 
 import Login from '../components/core/user/Login';
 import ChangePassword from '../components/core/user/ChangePassword';
-import Home from './Home';
+import EntriesList from './EntriesList';
+import EntryFormPage from './EntryFormPage';
 
 import AuthRoute from '../components/routes/AuthRoute';
 import GuestRoute from '../components/routes/GuestRoute';
@@ -39,7 +40,12 @@ const Index = () => {
           </AuthRoute>
         </Layout>
       ),
-      children: [{ path: '/', index: true, element: <Home /> }]
+      children: [
+        { path: '/', index: true, element: <EntriesList /> },
+        { path: '/entries', element: <Navigate to="/" replace /> },
+        { path: '/entries/new', element: <EntryFormPage /> },
+        { path: '/entries/:entryId/edit', element: <EntryFormPage /> }
+      ]
     },
     {
       path: '/',
