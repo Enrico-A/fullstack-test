@@ -43,5 +43,47 @@ module.exports = {
     type: 'object',
     properties: entryProperties,
     additionalProperties: false
+  },
+  listDiaryEntriesQuery: {
+    $id: 'listDiaryEntriesQuery',
+    type: 'object',
+    properties: {
+      type: entryProperties.type,
+      category: {
+        type: 'string',
+        minLength: 1,
+        maxLength: 50,
+        isNotEmpty: true
+      },
+      description: {
+        type: 'string',
+        minLength: 1,
+        maxLength: 150,
+        isNotEmpty: true
+      },
+      dateFrom: {
+        type: 'string',
+        format: 'date'
+      },
+      dateTo: {
+        type: 'string',
+        format: 'date'
+      },
+      sorter: {
+        type: 'string',
+        enum: ['date', '-date', 'amount', '-amount', 'category', '-category', 'createdAt', '-createdAt']
+      },
+      nextKey: {
+        type: 'string'
+      },
+      limit: {
+        type: 'integer',
+        minimum: 0
+      },
+      count: {
+        type: 'boolean'
+      }
+    },
+    additionalProperties: false
   }
 };

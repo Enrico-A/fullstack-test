@@ -3,6 +3,17 @@ const getter = require('../helpers/getter');
 const { SendData, ServerError, NotFound, Unauthorized } = require('../helpers/response');
 
 const escapeRegExp = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const getStartOfDay = value => new Date(`${value}T00:00:00.000Z`);
+const getEndOfDay = value => new Date(`${value}T23:59:59.999Z`);
+
+const findOwnedEntry = async ({ entryId, userId }) => {
+  const entry = await DiaryEntry.findById(entryId);
+
+  if (!entry) return NotFound();
+  if (String(entry.user) !== String(userId)) return Unauthorized();
+
+  return entry;
+};
 
 const buildQuery = ({ query, userId }) => {
   const filters = { user: userId };
@@ -23,11 +34,13 @@ const buildQuery = ({ query, userId }) => {
     filters.date = {};
 
     if (query.dateFrom) {
-      filters.date.$gte = new Date(query.dateFrom);
+      // Include the full starting day in the filter range.
+      filters.date.$gte = getStartOfDay(query.dateFrom);
     }
 
     if (query.dateTo) {
-      filters.date.$lte = new Date(query.dateTo);
+      // Include the full ending day in the filter range.
+      filters.date.$lte = getEndOfDay(query.dateTo);
     }
   }
 
@@ -69,10 +82,9 @@ exports.create = async (req, res, next) => {
 
 exports.getById = async ({ params: { id } }, { locals: { user } }, next) => {
   try {
-    const data = await DiaryEntry.findById(id);
+    const data = await findOwnedEntry({ entryId: id, userId: user.id });
 
-    if (!data) return next(NotFound());
-    if (String(data.user) !== String(user.id)) return next(Unauthorized());
+    if (data.error) return next(data);
 
     return next(SendData(data.response('cp')));
   } catch (error) {
@@ -82,10 +94,9 @@ exports.getById = async ({ params: { id } }, { locals: { user } }, next) => {
 
 exports.update = async ({ params: { id }, body }, { locals: { user } }, next) => {
   try {
-    const data = await DiaryEntry.findById(id);
+    const data = await findOwnedEntry({ entryId: id, userId: user.id });
 
-    if (!data) return next(NotFound());
-    if (String(data.user) !== String(user.id)) return next(Unauthorized());
+    if (data.error) return next(data);
 
     Object.assign(data, body);
     await data.save();
@@ -98,10 +109,9 @@ exports.update = async ({ params: { id }, body }, { locals: { user } }, next) =>
 
 exports.delete = async ({ params: { id } }, { locals: { user } }, next) => {
   try {
-    const data = await DiaryEntry.findById(id);
+    const data = await findOwnedEntry({ entryId: id, userId: user.id });
 
-    if (!data) return next(NotFound());
-    if (String(data.user) !== String(user.id)) return next(Unauthorized());
+    if (data.error) return next(data);
 
     await data.softDelete();
 

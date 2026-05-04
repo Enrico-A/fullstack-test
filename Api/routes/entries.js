@@ -6,12 +6,17 @@ const { validator } = require('../middlewares/validator');
 
 const router = express.Router();
 
-router.route('/').get(isAuth, controller.get).post(validator('createDiaryEntry'), isAuth, controller.create);
+router.use(isAuth);
+
+router
+  .route('/')
+  .get(validator({ query: 'listDiaryEntriesQuery' }), controller.get)
+  .post(validator('createDiaryEntry'), controller.create);
 
 router
   .route('/:id')
-  .get(validator({ params: 'id' }), isAuth, controller.getById)
-  .patch(validator({ params: 'id', body: 'updateDiaryEntry' }), isAuth, controller.update)
-  .delete(validator({ params: 'id' }), isAuth, controller.delete);
+  .get(validator({ params: 'id' }), controller.getById)
+  .patch(validator({ params: 'id', body: 'updateDiaryEntry' }), controller.update)
+  .delete(validator({ params: 'id' }), controller.delete);
 
 module.exports = router;

@@ -8,6 +8,7 @@ const { Schema } = mongoose;
 const schema = Schema(
   {
     user: {
+      // Each diary entry is private and belongs to one authenticated user.
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
@@ -52,6 +53,8 @@ const schema = Schema(
     timestamps: true
   }
 );
+
+schema.index({ user: 1, date: -1, _id: -1 });
 
 schema.plugin(softDelete);
 schema.plugin(dbFields, {
