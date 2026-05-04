@@ -121,6 +121,17 @@ describe('GET /entries', () => {
           data: '/type'
         })
       ));
+
+  test('returns the total count header when requested', () =>
+    agent
+      .get('/entries?count=true&limit=1')
+      .set('Cookie', `accessToken=${userToken}`)
+      .expect(200)
+      .then(res => {
+        expect(res.body).toHaveLength(1);
+        expect(res.headers['x-total-count']).toBe('2');
+        expect(res.headers['x-next-key']).toEqual(expect.any(String));
+      }));
 });
 
 describe('POST /entries', () => {
@@ -156,6 +167,65 @@ describe('POST /entries', () => {
         expect(String(entry.user)).toBe(String(user.id));
         expect(entry.amount).toBe(20);
       }));
+
+  test('rejects creation when required fields are missing', () =>
+    agent
+      .post('/entries')
+      .set('Cookie', `accessToken=${userToken}`)
+      .send({
+        type: 'expense',
+        category: 'Health',
+        description: 'Missing amount and date'
+      })
+      .expect(400)
+      .then(res =>
+        expect(res.body).toStrictEqual({
+          error: 201,
+          message: 'Missing required parameters',
+          data: '/amount'
+        })
+      ));
+
+  test('rejects creation when the amount precision is invalid', () =>
+    agent
+      .post('/entries')
+      .set('Cookie', `accessToken=${userToken}`)
+      .send({
+        type: 'expense',
+        amount: 10.555,
+        date: '2024-04-05',
+        category: 'Health',
+        description: 'Invalid amount precision'
+      })
+      .expect(400)
+      .then(res =>
+        expect(res.body).toStrictEqual({
+          error: 200,
+          message: 'Validation error',
+          data: '/amount'
+        })
+      ));
+
+  test('rejects creation when the payload contains unsupported fields', () =>
+    agent
+      .post('/entries')
+      .set('Cookie', `accessToken=${userToken}`)
+      .send({
+        type: 'expense',
+        amount: 10,
+        date: '2024-04-05',
+        category: 'Health',
+        description: 'Unexpected field',
+        currency: 'EUR'
+      })
+      .expect(400)
+      .then(res =>
+        expect(res.body).toStrictEqual({
+          error: 202,
+          message: 'Additional parameters are not permitted',
+          data: '/currency'
+        })
+      ));
 });
 
 describe('GET /entries/:id', () => {
@@ -180,6 +250,12 @@ describe('GET /entries/:id', () => {
 
   test('cannot return another user entry', () =>
     agent.get(`/entries/${otherUserEntry.id}`).set('Cookie', `accessToken=${userToken}`).expect(401));
+
+  test('returns not found for a deleted owned entry', async () => {
+    await firstUserEntry.softDelete();
+
+    return agent.get(`/entries/${firstUserEntry.id}`).set('Cookie', `accessToken=${userToken}`).expect(404);
+  });
 });
 
 describe('PATCH /entries/:id', () => {
@@ -212,6 +288,23 @@ describe('PATCH /entries/:id', () => {
       .set('Cookie', `accessToken=${userToken}`)
       .send({ notes: 'Forbidden update' })
       .expect(401));
+
+  test('rejects update when validation fails', () =>
+    agent
+      .patch(`/entries/${firstUserEntry.id}`)
+      .set('Cookie', `accessToken=${userToken}`)
+      .send({
+        type: 'invalid',
+        notes: 'This request should fail'
+      })
+      .expect(400)
+      .then(res =>
+        expect(res.body).toStrictEqual({
+          error: 200,
+          message: 'Validation error',
+          data: '/type'
+        })
+      ));
 });
 
 describe('DELETE /entries/:id', () => {
@@ -227,6 +320,11 @@ describe('DELETE /entries/:id', () => {
       .then(entry => {
         expect(entry).not.toBe(null);
         expect(entry.deleted).toBe(true);
+      })
+      .then(() => agent.get('/entries').set('Cookie', `accessToken=${userToken}`).expect(200))
+      .then(res => {
+        expect(res.body).toHaveLength(1);
+        expect(res.body[0]._id).toBe(secondUserEntry.id);
       }));
 
   test('cannot delete another user entry', () =>
